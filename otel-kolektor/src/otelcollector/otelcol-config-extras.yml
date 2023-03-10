@@ -1,0 +1,36 @@
+# extra settings to be merged into OpenTelemetry Collector configuration
+# do not delete this file
+receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:54526
+
+processors:
+  attributes:
+    actions:
+      - action: insert
+        key: event_domain
+        from_attribute: event.domain
+      - action: insert
+        key: loki.attribute.labels
+        value: event_domain
+
+  resource:
+    attributes:
+      - action: insert
+        key: service_name
+        from_attribute: service.name
+      - action: insert
+        key: loki.resource.labels
+        value: service_name
+exporters:
+  logging:
+    loglevel: debug
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+
+service:
+  pipelines:
+    logs:
+      receivers: [fluentforward]
+      processors: [resource, attributes]
+      exporters: [logging, loki]
