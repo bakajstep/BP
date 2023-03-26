@@ -35,8 +35,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [spanmetrics, batch]
-      exporters: [logging, otlp]
+      exporters: [otlp]
     metrics:
       receivers: [otlp]
       processors: [transform, batch]
-      exporters: [prometheus, logging]
+      exporters: [prometheus]
