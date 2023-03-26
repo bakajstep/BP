@@ -89,7 +89,9 @@ services:
       - "4318:4318"          # OTLP over HTTP receiver
       - "9464:9464"          # Prometheus exporter
       - "8888:8888"          # metrics endpoint
-      - "54526:54526"        # syslog log send  
+      - "54526:54526"        # syslog server
+      - "54527:54527"        # syslog collector
+      - "8006:8006"          # fluent-bit docker logs
     depends_on:
       - jaeger
     logging: *logging
@@ -112,3 +114,5 @@ services:
     ports:
       - "${PROMETHEUS_SERVICE_PORT}:${PROMETHEUS_SERVICE_PORT}"
     logging: *logging
+
+

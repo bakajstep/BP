@@ -2,26 +2,48 @@
 # do not delete this file
 receivers:
   fluentforward:
-    endpoint: 0.0.0.0:54526
+    endpoint: 0.0.0.0:8006
+  syslog/server:
+    tcp:
+      listen_address: "0.0.0.0:54526"
+    protocol: rfc5424
+    operators:
+      - type: syslog_parser
+        protocol: rfc5424
+  syslog/collector:
+    tcp:
+      listen_address: "0.0.0.0:54527"
+    protocol: rfc5424
+    operators:
+      - type: syslog_parser
+        protocol: rfc5424
 
 processors:
-  attributes:
+  attributes/fluent:
     actions:
       - action: insert
-        key: event_domain
-        from_attribute: event.domain
+        key: tag
+        from_attribute: fluent.tag
       - action: insert
         key: loki.attribute.labels
-        value: event_domain
+        value: tag
+  attributes/server:
+    actions:
+      - action: insert
+        key: syslog
+        value: server_eshop
+      - action: insert
+        key: loki.attribute.labels
+        value: syslog
+  attributes/collector:
+    actions:
+      - action: insert
+        key: syslog
+        value: syslog_collector
+      - action: insert
+        key: loki.attribute.labels
+        value: syslog
 
-  resource:
-    attributes:
-      - action: insert
-        key: service_name
-        from_attribute: service.name
-      - action: insert
-        key: loki.resource.labels
-        value: service_name
 exporters:
   logging:
     loglevel: debug
@@ -32,5 +54,13 @@ service:
   pipelines:
     logs:
       receivers: [fluentforward]
-      processors: [resource, attributes]
-      exporters: [logging, loki]
+      processors: [attributes/fluent]
+      exporters: [loki]
+    logs/syslog_server:
+      receivers: [syslog/server]
+      processors: [attributes/server]
+      exporters: [loki]
+    logs/syslog_colector:
+      receivers: [syslog/collector]
+      processors: [attributes/collector]
+      exporters: [loki]
