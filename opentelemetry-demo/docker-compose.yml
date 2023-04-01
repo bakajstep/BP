@@ -560,11 +560,11 @@ services:
   
   # Loging docker events
   fluent-bit:
-    image: fluent/fluent-bit:1.7
+    image: fluent/fluent-bit:2.0.9
     container_name: fluent-bit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: "/fluent-bit/bin/fluent-bit -i docker_events -o forward://192.168.1.14:54526 -f 1"
+    command: "/fluent-bit/bin/fluent-bit -i docker_events -o forward://192.168.1.14:8006 -f 1"
 
 
   # *****
