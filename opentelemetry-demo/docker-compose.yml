@@ -307,6 +307,7 @@ services:
       context: ./
       dockerfile: src/frontendproxy/Dockerfile
     container_name: frontend-proxy
+    restart: always
     ports:
       - "${ENVOY_PORT}:${ENVOY_PORT}"
       - 10000:10000
@@ -504,6 +505,8 @@ services:
         limits:
           memory: 200M
     restart: always
+    ports:
+      - 5432:5432
     environment:
       - POSTGRES_USER=ffs
       - POSTGRES_DB=ffs
@@ -562,6 +565,7 @@ services:
   fluent-bit:
     image: fluent/fluent-bit:2.0.9
     container_name: fluent-bit
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: "/fluent-bit/bin/fluent-bit -i docker_events -o forward://192.168.1.14:8006 -f 1"
