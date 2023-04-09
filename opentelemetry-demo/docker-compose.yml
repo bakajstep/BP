@@ -1,16 +1,6 @@
 # Copyright The OpenTelemetry Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+
 
 version: '3.9'
 x-default-logging: &logging
@@ -41,11 +31,10 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     environment:
       - KAFKA_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=accountingservice
@@ -67,15 +56,16 @@ services:
       resources:
         limits:
           memory: 300M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${AD_SERVICE_PORT}"
     environment:
       - AD_SERVICE_PORT
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
+      - OTEL_LOGS_EXPORTER=otlp
       - OTEL_SERVICE_NAME=adservice
     logging: *logging
 
@@ -92,7 +82,7 @@ services:
       resources:
         limits:
           memory: 160M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${CART_SERVICE_PORT}"
     environment:
@@ -119,7 +109,7 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${CHECKOUT_SERVICE_PORT}"
     environment:
@@ -131,8 +121,7 @@ services:
       - PRODUCT_CATALOG_SERVICE_ADDR
       - SHIPPING_SERVICE_ADDR
       - KAFKA_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=checkoutservice
@@ -168,12 +157,12 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${CURRENCY_SERVICE_PORT}"
     environment:
       - CURRENCY_SERVICE_PORT
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.name=currencyservice   # The C++ SDK does not support OTEL_SERVICE_NAME
     logging: *logging
 
@@ -189,7 +178,7 @@ services:
       resources:
         limits:
           memory: 100M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${EMAIL_SERVICE_PORT}"
     environment:
@@ -212,19 +201,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 200M
-    restart: always
+          memory: 175M
+    restart: unless-stopped
     ports:
-      - "${FEATURE_FLAG_SERVICE_PORT}"     # Feature Flag Service UI
+      - "${FEATURE_FLAG_SERVICE_PORT}"                                  # Feature Flag Service UI
       - "${FEATURE_FLAG_GRPC_SERVICE_PORT}"                             # Feature Flag Service gRPC API
     environment:
       - FEATURE_FLAG_SERVICE_PORT
       - FEATURE_FLAG_GRPC_SERVICE_PORT
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
       - OTEL_SERVICE_NAME=featureflagservice
       - DATABASE_URL=ecto://ffs:ffs@ffs_postgres:5432/ffs
-      - FEATURE_FLAG_SERVICE_PATH_ROOT="/feature"
+    healthcheck:
+      test: ["CMD", "curl", "-H", "baggage: synthetic_request=true", "-f", "http://localhost:${FEATURE_FLAG_SERVICE_PORT}"]
     depends_on:
       ffs_postgres:
         condition: service_healthy
@@ -243,11 +233,10 @@ services:
       resources:
         limits:
           memory: 200M
-    restart: always
+    restart: unless-stopped
     environment:
       - KAFKA_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=frauddetectionservice
@@ -269,7 +258,7 @@ services:
       resources:
         limits:
           memory: 200M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${FRONTEND_PORT}"
     environment:
@@ -282,12 +271,12 @@ services:
       - PRODUCT_CATALOG_SERVICE_ADDR
       - RECOMMENDATION_SERVICE_ADDR
       - SHIPPING_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
       - OTEL_EXPORTER_OTLP_ENDPOINT
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES}
       - ENV_PLATFORM
       - OTEL_SERVICE_NAME=frontend
       - PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - WEB_OTEL_SERVICE_NAME=frontend-web
     depends_on:
       - adservice
@@ -303,11 +292,14 @@ services:
   # Frontend Proxy (Envoy)
   frontendproxy:
     image: ${IMAGE_NAME}:${IMAGE_VERSION}-frontendproxy
+    container_name: frontend-proxy
     build:
       context: ./
       dockerfile: src/frontendproxy/Dockerfile
-    container_name: frontend-proxy
-    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 50M
     ports:
       - "${ENVOY_PORT}:${ENVOY_PORT}"
       - 10000:10000
@@ -343,7 +335,7 @@ services:
       resources:
         limits:
           memory: 120M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${LOCUST_WEB_PORT}"
     environment:
@@ -352,7 +344,7 @@ services:
       - LOCUST_HOST
       - LOCUST_HEADLESS
       - LOCUST_AUTOSTART
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:4318/v1/traces
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=loadgenerator
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
@@ -372,14 +364,13 @@ services:
     deploy:
       resources:
         limits:
-          memory: 70M
-    restart: always
+          memory: 120M
+    restart: unless-stopped
     ports:
       - "${PAYMENT_SERVICE_PORT}"
     environment:
       - PAYMENT_SERVICE_PORT
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=paymentservice
@@ -398,14 +389,13 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${PRODUCT_CATALOG_SERVICE_PORT}"
     environment:
       - PRODUCT_CATALOG_SERVICE_PORT
       - FEATURE_FLAG_GRPC_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=productcatalogservice
@@ -414,7 +404,7 @@ services:
   # Quote service
   quoteservice:
     image: ${IMAGE_NAME}:${IMAGE_VERSION}-quoteservice
-    container_name: quoteservice
+    container_name: quote-service
     build:
       context: ./
       dockerfile: ./src/quoteservice/Dockerfile
@@ -423,12 +413,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: 30M
-    restart: always
+          memory: 40M
+    restart: unless-stopped
     ports:
       - "${QUOTE_SERVICE_PORT}"
     environment:
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:4318/v1/traces
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:4318
       - OTEL_PHP_AUTOLOAD_ENABLED=true
       - QUOTE_SERVICE_PORT
       - OTEL_RESOURCE_ATTRIBUTES
@@ -448,7 +438,7 @@ services:
       resources:
         limits:
           memory: 500M               # This is high to enable supporting the recommendationCache feature flag use case
-    restart: always
+    restart: unless-stopped
     ports:
       - "${RECOMMENDATION_SERVICE_PORT}"
     environment:
@@ -456,8 +446,6 @@ services:
       - PRODUCT_CATALOG_SERVICE_ADDR
       - FEATURE_FLAG_GRPC_SERVICE_ADDR
       - OTEL_PYTHON_LOG_CORRELATION=true
-      - OTEL_TRACES_EXPORTER=otlp
-      - OTEL_METRICS_EXPORTER=otlp
       - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
@@ -481,13 +469,13 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${SHIPPING_SERVICE_PORT}"
     environment:
       - SHIPPING_SERVICE_PORT
       - QUOTE_SERVICE_ADDR
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:4317/v1/traces
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=shippingservice
     logging: *logging
@@ -503,20 +491,18 @@ services:
     deploy:
       resources:
         limits:
-          memory: 200M
-    restart: always
-    ports:
-      - 5432:5432
+          memory: 120M
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=ffs
       - POSTGRES_DB=ffs
       - POSTGRES_PASSWORD=ffs
-    logging: *logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d ffs -U ffs"]
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *logging
 
   # Kafka used by Checkout, Accounting, and Fraud Detection services
   kafka:
@@ -530,22 +516,22 @@ services:
     deploy:
       resources:
         limits:
-          memory: 800M
-    restart: always
+          memory: 500M
+    restart: unless-stopped
     environment:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_EXPORTER_OTLP_ENDPOINT
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=kafka
-    logging: *logging
+      - KAFKA_HEAP_OPTS=-Xmx200m -Xms200m
     healthcheck:
       test: nc -z kafka 9092
       start_period: 10s
       interval: 5s
       timeout: 10s
       retries: 10
+    logging: *logging
 
   # Redis used by Cart service
   redis-cart:
@@ -556,11 +542,11 @@ services:
       resources:
         limits:
           memory: 20M
-    restart: always
+    restart: unless-stopped
     ports:
       - "${REDIS_PORT}"
     logging: *logging
-  
+
   # Loging docker events
   fluent-bit:
     image: fluent/fluent-bit:2.0.9
@@ -569,7 +555,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: "/fluent-bit/bin/fluent-bit -i docker_events -o forward://192.168.1.14:8006 -f 1"
-
 
   # *****
   # Tests
