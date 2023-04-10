@@ -71,10 +71,13 @@ services:
       - ./src/otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
       - ./src/otelcollector/otelcol-config-extras.yml:/etc/otelcol-config-extras.yml
     ports:
-      - "4317"          # OTLP over gRPC receiver
-      - "4318:4318"     # OTLP over HTTP receiver
-      - "9464"          # Prometheus exporter
-      - "8888"          # metrics endpoint
+      - "4317:4317"          # OTLP over gRPC receiver
+      - "4318:4318"          # OTLP over HTTP receiver
+      - "9464:9464"          # Prometheus exporter
+      - "8888:8888"          # metrics endpoint
+      - "8006:8006"          # FluentBit
+      - "54526:54526"        # Syslog
+      - "54527:54527"        # Syslog
     depends_on:
       - jaeger
     logging: *logging
