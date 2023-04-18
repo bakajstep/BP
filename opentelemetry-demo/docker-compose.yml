@@ -58,7 +58,7 @@ services:
           memory: 300M
     restart: unless-stopped
     ports:
-      - "${AD_SERVICE_PORT}"
+      - "${AD_SERVICE_PORT}:${AD_SERVICE_PORT}"
     environment:
       - AD_SERVICE_PORT
       - FEATURE_FLAG_GRPC_SERVICE_ADDR
@@ -84,7 +84,7 @@ services:
           memory: 160M
     restart: unless-stopped
     ports:
-      - "${CART_SERVICE_PORT}"
+      - "${CART_SERVICE_PORT}:${CART_SERVICE_PORT}"
     environment:
       - CART_SERVICE_PORT
       - REDIS_ADDR
@@ -111,7 +111,7 @@ services:
           memory: 20M
     restart: unless-stopped
     ports:
-      - "${CHECKOUT_SERVICE_PORT}"
+      - "${CHECKOUT_SERVICE_PORT}:${CHECKOUT_SERVICE_PORT}"
     environment:
       - CHECKOUT_SERVICE_PORT
       - CART_SERVICE_ADDR
@@ -159,7 +159,7 @@ services:
           memory: 20M
     restart: unless-stopped
     ports:
-      - "${CURRENCY_SERVICE_PORT}"
+      - "${CURRENCY_SERVICE_PORT}:${CURRENCY_SERVICE_PORT}"
     environment:
       - CURRENCY_SERVICE_PORT
       - OTEL_EXPORTER_OTLP_ENDPOINT
@@ -180,7 +180,7 @@ services:
           memory: 100M
     restart: unless-stopped
     ports:
-      - "${EMAIL_SERVICE_PORT}"
+      - "${EMAIL_SERVICE_PORT}:${EMAIL_SERVICE_PORT}"
     environment:
       - APP_ENV=production
       - EMAIL_SERVICE_PORT
@@ -204,8 +204,8 @@ services:
           memory: 175M
     restart: unless-stopped
     ports:
-      - "${FEATURE_FLAG_SERVICE_PORT}"                                  # Feature Flag Service UI
-      - "${FEATURE_FLAG_GRPC_SERVICE_PORT}"                             # Feature Flag Service gRPC API
+      - "${FEATURE_FLAG_SERVICE_PORT}:${FEATURE_FLAG_SERVICE_PORT}"                   # Feature Flag Service UI
+      - "${FEATURE_FLAG_GRPC_SERVICE_PORT}:${FEATURE_FLAG_GRPC_SERVICE_PORT}"         # Feature Flag Service gRPC API
     environment:
       - FEATURE_FLAG_SERVICE_PORT
       - FEATURE_FLAG_GRPC_SERVICE_PORT
@@ -337,7 +337,7 @@ services:
           memory: 120M
     restart: unless-stopped
     ports:
-      - "${LOCUST_WEB_PORT}"
+      - "${LOCUST_WEB_PORT}:${LOCUST_WEB_PORT}"
     environment:
       - LOCUST_WEB_PORT
       - LOCUST_USERS
@@ -367,7 +367,7 @@ services:
           memory: 120M
     restart: unless-stopped
     ports:
-      - "${PAYMENT_SERVICE_PORT}"
+      - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
       - PAYMENT_SERVICE_PORT
       - OTEL_EXPORTER_OTLP_ENDPOINT
@@ -391,7 +391,7 @@ services:
           memory: 20M
     restart: unless-stopped
     ports:
-      - "${PRODUCT_CATALOG_SERVICE_PORT}"
+      - "${PRODUCT_CATALOG_SERVICE_PORT}:${PRODUCT_CATALOG_SERVICE_PORT}"
     environment:
       - PRODUCT_CATALOG_SERVICE_PORT
       - FEATURE_FLAG_GRPC_SERVICE_ADDR
@@ -416,7 +416,7 @@ services:
           memory: 40M
     restart: unless-stopped
     ports:
-      - "${QUOTE_SERVICE_PORT}"
+      - "${QUOTE_SERVICE_PORT}:${QUOTE_SERVICE_PORT}"
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:4318
       - OTEL_PHP_AUTOLOAD_ENABLED=true
@@ -440,7 +440,7 @@ services:
           memory: 500M               # This is high to enable supporting the recommendationCache feature flag use case
     restart: unless-stopped
     ports:
-      - "${RECOMMENDATION_SERVICE_PORT}"
+      - "${RECOMMENDATION_SERVICE_PORT}:${RECOMMENDATION_SERVICE_PORT}"
     environment:
       - RECOMMENDATION_SERVICE_PORT
       - PRODUCT_CATALOG_SERVICE_ADDR
@@ -471,7 +471,7 @@ services:
           memory: 20M
     restart: unless-stopped
     ports:
-      - "${SHIPPING_SERVICE_PORT}"
+      - "${SHIPPING_SERVICE_PORT}:${SHIPPING_SERVICE_PORT}"
     environment:
       - SHIPPING_SERVICE_PORT
       - QUOTE_SERVICE_ADDR
@@ -544,7 +544,7 @@ services:
           memory: 20M
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT}"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     logging: *logging
 
   # Loging docker events
