@@ -1,17 +1,13 @@
-import logging
-from opentelemetry import trace
-from opentelemetry.exporter import syslog
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
+import socket
 
-# Set up the tracer and span processor
-trace.set_tracer_provider(TracerProvider())
-span_processor = BatchExportSpanProcessor(syslog.SyslogExporter(address="syslog_collector_ip:514"))
-trace.get_tracer_provider().add_span_processor(span_processor)
+# Create a TCP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Set up the logger with the tracer
-logger = logging.getLogger(__name__)
-logger.addHandler(trace.get_tracer_provider().get_tracer(__name__).span_processor)
+# Connect to the remote syslog server
+sock.connect(('192.168.1.14', 54527))
 
-# Send a message to syslog
-logger.warning('This is a syslog message sent from Python with OpenTelemetry')
+# Send a syslog message
+sock.send('<13>Apr 19 12:34:56 myhost myprocess: Hello, syslog!\n'.encode())
+
+# Close the socket
+sock.close()

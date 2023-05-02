@@ -8,7 +8,7 @@ def make_request():
 
 # Create a list of threads
 threads = []
-for i in range(500):
+for i in range(100):
     # Create a new thread
     thread = threading.Thread(target=make_request)
     # Add the thread to the list
