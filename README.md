@@ -42,4 +42,4 @@ They are in the **experiments** folder and you can run the first experiment as a
 
 ## Capture packets
 
-Script **captureData.sh** which we use in chapter 3.2 for packet counting when sending telemetry data. In the script, modify the address where the Loadgen microservice runs to simulate users.
+Script **captureData.sh** which we use in chapter 3.2 for packet counting when sending telemetry data. In the script, modify the address where the Loadgen microservice runs to simulate users and change network interface.
