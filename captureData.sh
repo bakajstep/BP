@@ -45,8 +45,8 @@ capinfos packets60Minutes10Persons.pcap | grep "Number of packets"| tr -d " " | 
 
 
 echo "50 users"
-capinfos packets10Minute50Person.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
-capinfos packets30Minute50Person.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
-capinfos packets60Minute50Person.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
+capinfos packets10Minute50Persons.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
+capinfos packets30Minute50Persons.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
+capinfos packets60Minute50Persons.pcap | grep "Number of packets"| tr -d " " | cut -d ":" -f 2
 
 
