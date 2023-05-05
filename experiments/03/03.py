@@ -1,3 +1,9 @@
+"""
+@Author: Stepan Bakaj
+@Login: xbakaj00
+@Date: 03.05.2023 
+"""
+
 import os, requests, threading
 
 # Define a function to make the POST request

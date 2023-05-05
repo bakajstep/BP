@@ -1,5 +1,8 @@
-#!/bin/bash
+# Author: Stepan Bakaj
+# Login: xbakaj00
+# Date: 03.05.2023
 
+#!/bin/bash
 
 curl -X POST -F 'user_count=1' -F 'spawn_rate=1' http://192.168.1.8:8080/loadgen/swarm
 sleep 5m

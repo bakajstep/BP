@@ -1,3 +1,9 @@
+"""
+@Author: Stepan Bakaj
+@Login: xbakaj00
+@Date: 03.05.2023 
+"""
+
 import socket
 
 # Create a TCP socket

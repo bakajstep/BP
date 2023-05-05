@@ -1,3 +1,7 @@
+# Author: Stepan Bakaj
+# Login: xbakaj00
+# Date: 03.05.2023
+
 #!/bin/bash
 
 sudo docker stop feture-flag-service
