@@ -1,0 +1,202 @@
+\chapter{Ukázka telemetrických dat}
+\label{data}
+V této kapitole si ukážeme program, kde nejprve zachytíme telemetrická data pomocí automatického sběru. Poté ho přepíšeme pro manuální sběr a zachytíme telemetrická data.
+
+Aplikace představuje server s jedním koncovým bodem \texttt{/hello\textunderscore world}, který po obdržení HTTP GET požadavku, odešle odpověď s pozdravem. 
+\section*{Automatický sběr dat}
+\label{auto}
+
+\subsection*{Zdrojový kód}
+\begin{listing}[H]
+    \begin{minted}{python}
+from flask import Flask, request
+
+app = Flask(__name__)
+
+
+@app.route("/hello_world")
+def server_request():
+    print(request.args.get("param"))
+    return "Hi"
+
+
+if __name__ == "__main__":
+    app.run(port=8080)
+\end{minted}
+    \caption{Ukázka kódu pro automatický sběr dat}
+    \label{lst:exampleCode}
+\end{listing}
+
+\subsection*{Vygenerovaná data}
+
+\begin{listing}[H]
+    \begin{minted}{json}
+{
+    "name": "/hello_world",
+    "context": {
+        "trace_id": "0x52febf311696be92218395ff71e5222d",
+        "span_id": "0x2b17fe881b521fba",
+        "trace_state": "[]"
+    },
+    "kind": "SpanKind.SERVER",
+    "parent_id": "0x82603ff759ca869a",
+    "start_time": "2023-01-15T10:59:44.449634Z",
+    "end_time": "2023-01-15T10:59:44.451575Z",
+    "status": {
+        "status_code": "UNSET"
+    },
+    "attributes": {
+        "http.method": "GET",
+        "http.server_name": "127.0.0.1",
+        "http.scheme": "http",
+        "net.host.port": 8080,
+        "http.host": "localhost:8080",
+        "http.target": "/hello_world?param=Hello",
+        "net.peer.ip": "127.0.0.1",
+        "http.user_agent": "python-requests/2.28.2",
+        "net.peer.port": 41678,
+        "http.flavor": "1.1",
+        "http.route": "/hello_world",
+        "http.status_code": 200
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+        "attributes": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.15.0",
+            "telemetry.auto.version": "0.36b0",
+            "service.name": "unknown_service"
+        },
+        "schema_url": ""
+    }
+}
+\end{minted}
+    \caption{Výsledná data automatického sběru dat}
+    \label{lst:exampleCodeResult}
+\end{listing}
+
+
+
+\section*{Manuální sběr dat}
+\label{manual}
+
+\subsection*{Zdrojový kód}
+\begin{listing}[H]
+    \begin{minted}{python}
+from flask import Flask, request
+from opentelemetry import trace
+from opentelemetry.instrumentation.wsgi import collect_request_attributes
+from opentelemetry.propagate import extract
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+    ConsoleSpanExporter,
+)
+
+app = Flask(__name__)
+
+trace.set_tracer_provider(TracerProvider())
+tracer = trace.get_tracer_provider().get_tracer(__name__)
+
+trace.get_tracer_provider().add_span_processor(
+    BatchSpanProcessor(ConsoleSpanExporter())
+)
+
+
+@app.route("/hello_world")
+def server_request():
+    with tracer.start_as_current_span(
+        "hello_world",
+        context=extract(request.headers),
+        kind=trace.SpanKind.SERVER,
+        attributes=collect_request_attributes(request.environ),
+    ):
+        print(request.args.get("param"))
+        return "Hi"
+
+
+if __name__ == "__main__":
+    app.run(port=8080)
+\end{minted}
+    \caption{Ukázka kódu pro manuální sběr dat}
+    \label{lst:exampleCode1}
+\end{listing}
+
+\subsection*{Vygenerovaná data}
+
+\begin{listing}[H]
+    \begin{minted}{json}
+{
+    "name": "hello_world",
+    "context": {
+        "trace_id": "0x9ebd0f920174b3484227b18f08a246d4",
+        "span_id": "0x58534f4ca1ee43b0",
+        "trace_state": "[]"
+    },
+    "kind": "SpanKind.SERVER",
+    "parent_id": "0x9f2996581d1b9d34",
+    "start_time": "2023-01-15T10:57:43.432127Z",
+    "end_time": "2023-01-15T10:57:43.432179Z",
+    "status": {
+        "status_code": "UNSET"
+    },
+    "attributes": {
+        "http.method": "GET",
+        "http.server_name": "127.0.0.1",
+        "http.scheme": "http",
+        "net.host.port": 8080,
+        "http.host": "localhost:8080",
+        "http.target": "/hello_world?param=Hello",
+        "net.peer.ip": "127.0.0.1",
+        "http.user_agent": "python-requests/2.28.2",
+        "net.peer.port": 36652,
+        "http.flavor": "1.1"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+        "attributes": {
+            "telemetry.sdk.language": "python",
+            "telemetry.sdk.name": "opentelemetry",
+            "telemetry.sdk.version": "1.15.0",
+            "service.name": "unknown_service"
+        },
+        "schema_url": ""
+    }
+}
+\end{minted}
+    \caption{Výsledná data manuálního sběru dat}
+    \label{lst:exampleCodeResult1}
+\end{listing}
+
+
+\chapter{Obsah přiloženého paměťového média}
+
+Přiložené paměťové médium obsahuje následující adresářovou strukturu:
+
+
+\dirtree{%
+.1 /.
+.2 bp/.\DTcomment{Složka se soubory pro překlad textu bakalářské práce}.
+.2 experiments/.\DTcomment{Složka s experimenty}.
+.3 01/.
+.4 01.sh.\DTcomment{Skript s experimentem 1}.
+.3 03/.
+.4 03.py.\DTcomment{Skript s experimentem 3}.
+.3 04/.
+.4 04.py.\DTcomment{Skript s experimentem 4}.
+.2 opentelemetry-demo/.
+.3 src/.\DTcomment{Složka se zdrojovými kódy mikroslužeb}.
+.3 .env.\DTcomment{Konfigurační soubor}.
+.3 docker-compose.yml.\DTcomment{Compose soubor s kontejnery}.
+.2 otel-collector/.
+.3 src/.\DTcomment{Složka se soubory pro kolektor a monitorovací nástroje}.
+.3 .env.\DTcomment{Konfigurační soubor}.
+.3 docker-compose.yml.\DTcomment{Compose soubor s kontejnery}.
+.2 captureData.sh.\DTcomment{Skript pro sběr paketů v kapitole 3.2}.
+.2 packetsOTLP.pcap.\DTcomment{Soubor s pakety protokolu OTLP}.
+.2 README.md.\DTcomment{Soubor popisující práci s testovacím prostředím}.
+.2 thesis.pdf.\DTcomment{Bakalářská práce ve formátu PDF}.
+}
